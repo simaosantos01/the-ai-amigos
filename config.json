@@ -1,0 +1,5 @@
+{
+  "pop_size": 50,
+  "rf_pop_percentage": 50,
+  "dl_pop_percentage": 50
+}
