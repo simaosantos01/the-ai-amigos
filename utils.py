@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 
 
@@ -32,3 +34,18 @@ def compute_class_weights(true_values):
     class_weights_normalized = {class_label: weight / total_weight for class_label, weight in class_weights.items()}
 
     return np.array([class_weights_normalized[label] for label in true_values])
+
+
+def generate_random_value_for_param(param):
+    if 'min_value' in param and param['type'] == 'float':
+        min_value = param['min_value']
+        max_value = param['max_value']
+        return random.uniform(min_value, max_value)
+    elif 'min_value' in param:
+        min_value = param['min_value']
+        max_value = param['max_value']
+        return random.randint(min_value, max_value)
+    else:
+        min_value = 0
+        max_value = len(param) - 1
+        return param[random.randint(min_value, max_value)]
