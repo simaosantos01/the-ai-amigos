@@ -40,6 +40,11 @@
       "min_value": 0,
       "max_value": 1,
       "type": "float"
+    },
+    "max_runtime_secs": {
+      "min_value": 3,
+      "max_value": 5,
+      "type": "integer"
     }
   },
   "DL": {
@@ -77,6 +82,11 @@
     "epochs": {
       "min_value": 10,
       "max_value": 20,
+      "type": "integer"
+    },
+    "max_runtime_secs": {
+      "min_value": 3,
+      "max_value": 5,
       "type": "integer"
     }
   }

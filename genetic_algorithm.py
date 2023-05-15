@@ -70,9 +70,10 @@ def calculate_fitness(chromosome, train_df, test_df):
 
     # Calculate weighted metrics
     accuracy = accuracy_score(true_values, predictions, sample_weight=class_weights)
-    precision = precision_score(true_values, predictions, average='weighted', sample_weight=class_weights)
+    precision = precision_score(true_values, predictions, average='weighted', sample_weight=class_weights,
+                                zero_division=0)
     recall = recall_score(true_values, predictions, average='weighted', sample_weight=class_weights, zero_division=0)
-    f1 = f1_score(true_values, predictions, average='weighted', sample_weight=class_weights)
+    f1 = f1_score(true_values, predictions, average='weighted', sample_weight=class_weights, zero_division=0)
 
     # Calculate fitness score
     fitness_score = (accuracy + precision + recall + f1) / 4.0
