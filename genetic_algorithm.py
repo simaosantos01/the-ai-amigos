@@ -1,13 +1,16 @@
 import copy
 import random
+
+import pandas
+
 from utils import convert_percentages_to_values, compute_class_weights, generate_random_value_for_param
 from h2o.estimators import H2ORandomForestEstimator, H2ODeepLearningEstimator
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 conf = {
-    'num_of_gens': 50,
+    'num_of_gens': 83,
     'pop_specs': {
-        'pop_size': 100,
+        'pop_size': 51,
         'RF_pop_rate': 50,
         'DL_pop_rate': 50,
     },
@@ -109,14 +112,14 @@ def init_pop():
                                                         conf['pop_specs']['DL_pop_rate'], 0)
     # RF
     for i in range(algo1):
-        params = {}
+        params = {'seed': random.randint(0, 1000000)}
         for param in conf['RF'].keys():
             params[param] = generate_random_value_for_param(conf['RF'][param])
         pop.append(Chromosome('RF', params))
 
     # DL
     for i in range(algo2):
-        params = {}
+        params = {'seed': random.randint(0, 1000000)}
         for param in conf['DL'].keys():
             params[param] = generate_random_value_for_param(conf['DL'][param])
         pop.append(Chromosome('DL', params))
@@ -125,13 +128,13 @@ def init_pop():
 
 
 def calculate_fitness(chromosome, train_df, test_df):
-    # predictors = train_df.col_names[1:]
-    # response = train_df.col_names[0]
+    predictors = train_df.col_names[1:]
+    response = train_df.col_names[0]
 
-    # if chromosome.model_type == 'RF':
-    #    model = H2ORandomForestEstimator(**chromosome.params)
-    # else:
-    #     model = H2ODeepLearningEstimator(**chromosome.params)
+    if chromosome.model_type == 'RF':
+        model = H2ORandomForestEstimator(**chromosome.params)
+    else:
+        model = H2ODeepLearningEstimator(**chromosome.params)
 
     # model.train(x=predictors, y=response, training_frame=train_df, validation_frame=test_df)
 
@@ -151,6 +154,7 @@ def calculate_fitness(chromosome, train_df, test_df):
     # Calculate weighted fitness score
     # fitness_score = (accuracy + precision + recall + f1) / 4.0
     # return fitness_score
+
     return random.randint(0, 100)
 
 
@@ -172,11 +176,17 @@ def mutate(chromosome):
         genes_to_mutate = random.sample(genes, random.randint(1, len(genes)))
 
         for gene in genes_to_mutate:
-            new_chromosome.params[gene] = generate_random_value_for_param(conf[new_chromosome.model_type][gene])
+            if gene == 'seed':
+                new_chromosome.params['seed'] = random.randint(0, 1000000)
+            else:
+                new_chromosome.params[gene] = generate_random_value_for_param(conf[new_chromosome.model_type][gene])
     else:
         gene_to_mutate = random.choice(list(new_chromosome.params.keys()))
-        new_chromosome.params[gene_to_mutate] = generate_random_value_for_param(
-            conf[new_chromosome.model_type][gene_to_mutate])
+        if gene_to_mutate == 'seed':
+            new_chromosome.params['seed'] = random.randint(0, 1000000)
+        else:
+            new_chromosome.params[gene_to_mutate] = generate_random_value_for_param(
+                conf[new_chromosome.model_type][gene_to_mutate])
 
     return new_chromosome
 
@@ -225,7 +235,7 @@ def reproduce(new_pop, selected, mutation, _crossover):
         mutation -= 1
         new_pop.append(mutate(random.choice(selected)))
 
-    while _crossover != 0:
+    while _crossover > 0:
         _crossover -= 2
 
         parents = random.sample(selected, 2)
@@ -245,18 +255,25 @@ def reproduce(new_pop, selected, mutation, _crossover):
 
 def genetic_algorithm(train_df, test_df):
     pop = init_pop()
-    fitness(pop, train_df, test_df)
+    historic = []
+    df = pandas.DataFrame(columns=['generation', 'best_fitness'])
+    to_keep, mutation, _crossover = convert_percentages_to_values(len(pop), conf['reproduction_specs']['keep_rate'],
+                                                                  conf['reproduction_specs']['mutation_rate'],
+                                                                  conf['reproduction_specs']['crossover_rate'])
 
     for i in range(0, conf['num_of_gens']):
+        print('Generation: ' + str(i))
+        historic = historic + pop
         fitness(pop, train_df, test_df)
         pop.sort(key=lambda chromosome: chromosome.fitness, reverse=True)
 
-        print('======= Generation ' + str(i) + ' =====')
-        print('best_fitness: ' + str(pop[0].fitness))
-        to_keep, mutation, _crossover = convert_percentages_to_values(len(pop), conf['reproduction_specs']['keep_rate'],
-                                                                      conf['reproduction_specs']['mutation_rate'],
-                                                                      conf['reproduction_specs']['crossover_rate'])
+        row = pandas.DataFrame({'generation': [i], 'best_fitness': [pop[0].fitness]})
+        df = pandas.concat([df, row])
+
         new_pop = pop[:to_keep]
         selected = select(pop)
         reproduce(new_pop, selected, mutation, _crossover)
         pop = new_pop
+
+    pop.sort(key=lambda chromosome: chromosome.fitness, reverse=True)
+    return pop[0], df, historic
