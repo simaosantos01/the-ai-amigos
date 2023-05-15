@@ -1,5 +1,83 @@
 {
-  "pop_size": 50,
-  "rf_pop_percentage": 50,
-  "dl_pop_percentage": 50
+  "num_of_gens": 20,
+  "pop_specs": {
+    "pop_size": 50,
+    "RF_pop_rate": 100,
+    "DL_pop_rate": 0
+  },
+  "reproduction_specs": {
+    "keep_rate": 40,
+    "mutation_rate": 25,
+    "randomize_num_of_genes_to_mutate": false,
+    "crossover_rate": 35,
+    "crossover_points": [
+      20,
+      80
+    ]
+  },
+  "RF": {
+    "ntrees": {
+      "min_value": 10,
+      "max_value": 50,
+      "type": "integer"
+    },
+    "max_depth": {
+      "min_value": 0,
+      "max_value": 20,
+      "type": "integer"
+    },
+    "min_rows": {
+      "min_value": 1,
+      "max_value": 20,
+      "type": "integer"
+    },
+    "sample_rate": {
+      "min_value": 0,
+      "max_value": 1,
+      "type": "float"
+    },
+    "col_sample_rate_per_tree": {
+      "min_value": 0,
+      "max_value": 1,
+      "type": "float"
+    }
+  },
+  "DL": {
+    "activation": [
+      "tanh",
+      "tanh_with_dropout",
+      "rectifier",
+      "rectifier_with_dropout",
+      "maxout",
+      "maxout_with_dropout"
+    ],
+    "hidden": [
+      [
+        100,
+        100
+      ],
+      [
+        200,
+        200
+      ]
+    ],
+    "input_dropout_ratio": [
+      0,
+      0.1,
+      0.2
+    ],
+    "l1": [
+      0,
+      1e-5
+    ],
+    "l2": [
+      0,
+      1e-5
+    ],
+    "epochs": {
+      "min_value": 10,
+      "max_value": 20,
+      "type": "integer"
+    }
+  }
 }

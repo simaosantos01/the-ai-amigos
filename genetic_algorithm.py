@@ -7,83 +7,6 @@ from utils import convert_percentages_to_values, compute_class_weights, generate
 from h2o.estimators import H2ORandomForestEstimator, H2ODeepLearningEstimator
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
-conf = {
-    'num_of_gens': 83,
-    'pop_specs': {
-        'pop_size': 51,
-        'RF_pop_rate': 50,
-        'DL_pop_rate': 50,
-    },
-    'reproduction_specs': {
-        'keep_rate': 80,
-        'mutation_rate': 10,
-        'randomize_num_of_genes_to_mutate': False,
-        'crossover_rate': 10,
-        'crossover_points': [
-            20, 80
-        ]
-    },
-    'RF': {
-        'ntrees': {
-            'min_value': 10,
-            'max_value': 50,
-            'type': 'integer'
-        },
-        'max_depth': {
-            'min_value': 0,
-            'max_value': 20,
-            'type': 'integer'
-        },
-        'min_rows': {
-            'min_value': 1,
-            'max_value': 20,
-            'type': 'integer'
-        },
-        'sample_rate': {
-            'min_value': 0,
-            'max_value': 1,
-            'type': 'float'
-        },
-        'col_sample_rate_per_tree': {
-            'min_value': 0,
-            'max_value': 1,
-            'type': 'float'
-        }
-    },
-    'DL': {
-        'activation': [
-            'tanh',
-            'tanh_with_dropout',
-            'rectifier',
-            'rectifier_with_dropout',
-            'maxout',
-            'maxout_with_dropout'
-        ],
-        'hidden': [
-            [100, 100],
-            [200, 200]
-        ],
-        'input_dropout_ratio': [
-            0,
-            0.1,
-            0.2
-        ],
-        'l1': [
-            0,
-            1e-5
-        ],
-        'l2': [
-            0,
-            1e-5
-        ],
-        'epochs': {
-            'min_value': 10,
-            'max_value': 1000,
-            'type': 'integer'
-        }
-    }
-}
-
 
 class Chromosome:
     def __init__(self, model_type, params):
@@ -106,7 +29,7 @@ class Chromosome:
         return str({'model_type': self.model_type, 'params': self.params}) + ' | Fitness: ' + str(self.fitness)
 
 
-def init_pop():
+def init_pop(conf):
     pop = []
     algo1, algo2, algo3 = convert_percentages_to_values(conf['pop_specs']['pop_size'], conf['pop_specs']['RF_pop_rate'],
                                                         conf['pop_specs']['DL_pop_rate'], 0)
@@ -136,26 +59,24 @@ def calculate_fitness(chromosome, train_df, test_df):
     else:
         model = H2ODeepLearningEstimator(**chromosome.params)
 
-    # model.train(x=predictors, y=response, training_frame=train_df, validation_frame=test_df)
+    model.train(x=predictors, y=response, training_frame=train_df, validation_frame=test_df)
 
-    # true_values = test_df.as_data_frame()['label'].tolist()
-    # predictions = model.predict(test_df).as_data_frame()['predict'].tolist()
-    # predictions = [round(value) for value in predictions]
+    true_values = test_df.as_data_frame()['label'].tolist()
+    predictions = model.predict(test_df).as_data_frame()['predict'].tolist()
+    predictions = [round(value) for value in predictions]
 
     # Calculate class weights based on class imbalance
-    # class_weights = compute_class_weights(true_values)
+    class_weights = compute_class_weights(true_values)
 
     # Calculate weighted metrics
-    # accuracy = accuracy_score(true_values, predictions, sample_weight=class_weights)
-    # precision = precision_score(true_values, predictions, average='weighted', sample_weight=class_weights)
-    # recall = recall_score(true_values, predictions, average='weighted', sample_weight=class_weights)
-    # f1 = f1_score(true_values, predictions, average='weighted', sample_weight=class_weights)
+    accuracy = accuracy_score(true_values, predictions, sample_weight=class_weights)
+    precision = precision_score(true_values, predictions, average='weighted', sample_weight=class_weights)
+    recall = recall_score(true_values, predictions, average='weighted', sample_weight=class_weights, zero_division=0)
+    f1 = f1_score(true_values, predictions, average='weighted', sample_weight=class_weights)
 
-    # Calculate weighted fitness score
-    # fitness_score = (accuracy + precision + recall + f1) / 4.0
-    # return fitness_score
-
-    return random.randint(0, 100)
+    # Calculate fitness score
+    fitness_score = (accuracy + precision + recall + f1) / 4.0
+    return fitness_score
 
 
 def fitness(pop, train_df, test_df):
@@ -168,7 +89,7 @@ def select(pop):
     return pop[:int(round(len(pop) / 2, 0))]
 
 
-def mutate(chromosome):
+def mutate(chromosome, conf):
     new_chromosome = copy.deepcopy(chromosome)
 
     if conf['reproduction_specs']['randomize_num_of_genes_to_mutate']:
@@ -191,7 +112,7 @@ def mutate(chromosome):
     return new_chromosome
 
 
-def crossover(chromosome_a, chromosome_b):
+def crossover(chromosome_a, chromosome_b, conf):
     num_of_genes = len(chromosome_a.params)
     params = list(chromosome_a.params.keys())
 
@@ -230,10 +151,10 @@ def crossover(chromosome_a, chromosome_b):
         return child_a, child_b
 
 
-def reproduce(new_pop, selected, mutation, _crossover):
+def reproduce(new_pop, selected, mutation, _crossover, conf):
     while mutation != 0:
         mutation -= 1
-        new_pop.append(mutate(random.choice(selected)))
+        new_pop.append(mutate(random.choice(selected), conf))
 
     while _crossover > 0:
         _crossover -= 2
@@ -242,7 +163,7 @@ def reproduce(new_pop, selected, mutation, _crossover):
         while parents[0].model_type != parents[1].model_type:
             parents = random.sample(selected, 2)
 
-        child_a, child_b = crossover(parents[0], parents[1])
+        child_a, child_b = crossover(parents[0], parents[1], conf)
 
         if _crossover >= 0:
             new_pop.append(child_a)
@@ -253,8 +174,8 @@ def reproduce(new_pop, selected, mutation, _crossover):
             new_pop.append(child_b)
 
 
-def genetic_algorithm(train_df, test_df):
-    pop = init_pop()
+def genetic_algorithm(train_df, test_df, conf):
+    pop = init_pop(conf)
     historic = []
     df = pandas.DataFrame(columns=['generation', 'best_fitness'])
     to_keep, mutation, _crossover = convert_percentages_to_values(len(pop), conf['reproduction_specs']['keep_rate'],
@@ -272,7 +193,7 @@ def genetic_algorithm(train_df, test_df):
 
         new_pop = pop[:to_keep]
         selected = select(pop)
-        reproduce(new_pop, selected, mutation, _crossover)
+        reproduce(new_pop, selected, mutation, _crossover, conf)
         pop = new_pop
 
     pop.sort(key=lambda chromosome: chromosome.fitness, reverse=True)
