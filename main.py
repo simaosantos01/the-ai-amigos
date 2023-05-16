@@ -88,13 +88,13 @@ def main():
     train_split_df, test_split_df = train_df.split_frame(ratios=[.75], seed=1234)
 
     # call genetic algorithm
-    best_chromosome, df_analysis, historic = genetic_algorithm(train_split_df, test_split_df, conf)
+    df_analysis, historic = genetic_algorithm(train_split_df, test_split_df, conf)
 
     # generate kaggle sample
-    generate_kaggle_sample(best_chromosome, train_split_df, test_split_df, test_df)
+    generate_kaggle_sample(historic[0], train_split_df, test_split_df, test_df)
 
     # generate analysis
-    generate_analysis(df_analysis, historic, best_chromosome)
+    generate_analysis(df_analysis, historic, historic[0])
 
 
 if __name__ == "__main__":

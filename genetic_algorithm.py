@@ -83,6 +83,7 @@ def calculate_fitness(chromosome, train_df, test_df):
 def fitness(pop, train_df, test_df):
     for chromosome in pop:
         chromosome.fitness = calculate_fitness(chromosome, train_df, test_df)
+        print(chromosome.fitness)
 
 
 def select(pop):
@@ -184,10 +185,12 @@ def genetic_algorithm(train_df, test_df, conf):
                                                                   conf['reproduction_specs']['crossover_rate'])
 
     for i in range(0, conf['num_of_gens']):
-        print('Generation: ' + str(i))
         historic = historic + pop
         fitness(pop, train_df, test_df)
         pop.sort(key=lambda chromosome: chromosome.fitness, reverse=True)
+
+        print('Generation: ' + str(i + 1))
+        print('Best Fitness: ' + str(pop[0].fitness))
 
         row = pandas.DataFrame({'generation': [i], 'best_fitness': [pop[0].fitness]})
         df = pandas.concat([df, row])
@@ -197,5 +200,5 @@ def genetic_algorithm(train_df, test_df, conf):
         reproduce(new_pop, selected, mutation, _crossover, conf)
         pop = new_pop
 
-    pop.sort(key=lambda chromosome: chromosome.fitness, reverse=True)
-    return pop[0], df, historic
+    historic.sort(key=lambda chromosome: chromosome.fitness, reverse=True)
+    return df, historic
