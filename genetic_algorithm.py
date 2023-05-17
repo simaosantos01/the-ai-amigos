@@ -52,6 +52,13 @@ def init_pop(conf):
             params[param] = generate_random_value_for_param(conf['DL'][param])
         pop.append(Chromosome('DL', params))
 
+    # GBM
+    for i in range(algo3):
+        params = {'seed': random.randint(0, 1000000)}
+        for param in conf['GBM'].keys():
+            params[param] = generate_random_value_for_param(conf['GBM'][param])
+        pop.append(Chromosome('GBM', params))
+
     return pop
 
 
