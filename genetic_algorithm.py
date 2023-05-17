@@ -3,8 +3,8 @@ import random
 import pandas
 from h2o import h2o
 from utils import convert_percentages_to_values, compute_class_weights, generate_random_value_for_param, save_model, \
-    write_log
-from h2o.estimators import H2ORandomForestEstimator, H2ODeepLearningEstimator
+    write_log, generate_second_crossover_point
+from h2o.estimators import H2ORandomForestEstimator, H2ODeepLearningEstimator, H2OGradientBoostingEstimator
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 
@@ -36,7 +36,8 @@ class Chromosome:
 def init_pop(conf):
     pop = []
     algo1, algo2, algo3 = convert_percentages_to_values(conf['pop_specs']['pop_size'], conf['pop_specs']['RF_pop_rate'],
-                                                        conf['pop_specs']['DL_pop_rate'], 0)
+                                                        conf['pop_specs']['DL_pop_rate'],
+                                                        conf['pop_specs']['GBM_pop_rate'])
     # RF
     for i in range(algo1):
         params = {'seed': random.randint(0, 1000000)}
@@ -60,8 +61,10 @@ def train_model(chromosome, train_df, test_df):
 
     if chromosome.model_type == 'RF':
         model = H2ORandomForestEstimator(**chromosome.params)
-    else:
+    elif chromosome.model_type == 'DL':
         model = H2ODeepLearningEstimator(**chromosome.params)
+    else:
+        model = H2OGradientBoostingEstimator(**chromosome.params)
 
     model.train(x=predictors, y=response, training_frame=train_df, validation_frame=test_df)
     return model
@@ -135,13 +138,18 @@ def mutate(chromosome, conf):
     return new_chromosome
 
 
-def crossover(chromosome_a, chromosome_b, conf):
+def crossover(chromosome_a, chromosome_b):
     num_of_genes = len(chromosome_a.params)
     params = list(chromosome_a.params.keys())
+    num_of_crossover_points = random.randint(1, 2)
 
-    if 0 <= 1 < len(conf['reproduction_specs']['crossover_points']):
-        point_a = int((conf['reproduction_specs']['crossover_points'][0] * num_of_genes / 100))
-        point_b = int((conf['reproduction_specs']['crossover_points'][1] * num_of_genes / 100))
+    if num_of_crossover_points == 2:
+        point_a = random.randint(2, num_of_genes - 1)
+        try:
+            point_b = generate_second_crossover_point(num_of_genes, point_a)
+        except Exception as e:
+            point_b = num_of_genes
+
         child_a = copy.deepcopy(chromosome_a)
         child_b = copy.deepcopy(chromosome_b)
 
@@ -153,13 +161,14 @@ def crossover(chromosome_a, chromosome_b, conf):
             child_a.params[params[i]] = chromosome_a.params[params[i]]
             child_b.params[params[i]] = chromosome_b.params[params[i]]
 
-        for i in range(point_b, num_of_genes):
-            child_a.params[params[i]] = chromosome_b.params[params[i]]
-            child_b.params[params[i]] = chromosome_a.params[params[i]]
+        if point_b != num_of_genes:
+            for i in range(point_b, num_of_genes):
+                child_a.params[params[i]] = chromosome_b.params[params[i]]
+                child_b.params[params[i]] = chromosome_a.params[params[i]]
 
         return child_a, child_b
     else:
-        point = int((conf['reproduction_specs']['crossover_points'][0] * num_of_genes / 100))
+        point = random.randint(2, num_of_genes - 1)
         child_a = copy.deepcopy(chromosome_a)
         child_b = copy.deepcopy(chromosome_b)
 
@@ -188,7 +197,7 @@ def reproduce(new_pop, selected, mutation, _crossover, conf):
         while parents[0].model_type != parents[1].model_type:
             parents = random.sample(selected, 2)
 
-        child_a, child_b = crossover(parents[0], parents[1], conf)
+        child_a, child_b = crossover(parents[0], parents[1])
         child_a.fitness = None
         child_b.fitness = None
 

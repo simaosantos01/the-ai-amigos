@@ -68,3 +68,21 @@ def write_log(message, run_id):
 
     with open(f'runs_history/{run_id}/run_logs.txt', "a") as file:
         file.write(log_message)
+
+
+def generate_second_crossover_point(num_of_genes, first_point):
+    half_size = int(num_of_genes / 2)
+
+    if first_point < half_size - 1:
+        second_point = random.randint(half_size - 1, num_of_genes - 2)
+    elif first_point > half_size - 1:
+        second_point = random.randint(1, half_size - 1)
+    else:
+        x = random.randint(0, 1)
+        if x == 0:
+            second_point = random.randint(1, half_size - 3)
+        else:
+            second_point = random.randint(half_size + 1, num_of_genes - 2)
+
+    return second_point
+
