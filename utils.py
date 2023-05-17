@@ -1,6 +1,8 @@
+import os
 import random
-
+from datetime import datetime
 import numpy as np
+from h2o import h2o
 
 
 def convert_percentages_to_values(total, percentage1, percentage2, percentage3):
@@ -49,3 +51,20 @@ def generate_random_value_for_param(param):
         min_value = 0
         max_value = len(param) - 1
         return param[random.randint(min_value, max_value)]
+
+
+def save_model(model, run_id):
+    if os.path.exists(f'runs_history/{run_id}/best_model'):
+        os.remove(f'runs_history/{run_id}/best_model')
+
+    model_path = h2o.save_model(model=model, path="./", force=True)
+    path = os.path.dirname(os.path.abspath(model_path))
+    os.rename(model_path, os.path.join(path, f'runs_history/{run_id}/best_model'))
+
+
+def write_log(message, run_id):
+    current_time = datetime.now()
+    log_message = f"[{current_time}] {message}\n"
+
+    with open(f'runs_history/{run_id}/run_logs.txt', "a") as file:
+        file.write(log_message)

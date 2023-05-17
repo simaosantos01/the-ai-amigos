@@ -1,9 +1,9 @@
 import copy
 import random
-
 import pandas
-
-from utils import convert_percentages_to_values, compute_class_weights, generate_random_value_for_param
+from h2o import h2o
+from utils import convert_percentages_to_values, compute_class_weights, generate_random_value_for_param, save_model, \
+    write_log
 from h2o.estimators import H2ORandomForestEstimator, H2ODeepLearningEstimator
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
@@ -13,6 +13,10 @@ class Chromosome:
         self.model_type = copy.deepcopy(model_type)
         self.params = copy.deepcopy(params)
         self.fitness = None
+        self.accuracy = None
+        self.precision = None
+        self.recall = None
+        self.f1 = None
 
     def __eq__(self, other):
         if len(self.params) != len(other.params):
@@ -50,7 +54,7 @@ def init_pop(conf):
     return pop
 
 
-def calculate_fitness(chromosome, train_df, test_df):
+def train_model(chromosome, train_df, test_df):
     predictors = train_df.col_names[1:]
     response = train_df.col_names[0]
 
@@ -60,7 +64,10 @@ def calculate_fitness(chromosome, train_df, test_df):
         model = H2ODeepLearningEstimator(**chromosome.params)
 
     model.train(x=predictors, y=response, training_frame=train_df, validation_frame=test_df)
+    return model
 
+
+def calculate_fitness(model, test_df):
     true_values = test_df.as_data_frame()['label'].tolist()
     predictions = model.predict(test_df).as_data_frame()['predict'].tolist()
     predictions = [round(value) for value in predictions]
@@ -77,13 +84,27 @@ def calculate_fitness(chromosome, train_df, test_df):
 
     # Calculate fitness score
     fitness_score = (accuracy + precision + recall + f1) / 4.0
-    return fitness_score
+    return fitness_score, accuracy, precision, recall, f1
 
 
-def fitness(pop, train_df, test_df):
+def fitness(pop, train_df, test_df, best_fitness, run_id):
     for chromosome in pop:
-        chromosome.fitness = calculate_fitness(chromosome, train_df, test_df)
-        print(chromosome.fitness)
+        if chromosome.fitness is None:
+            model = train_model(chromosome, train_df, test_df)
+            fitness_score, accuracy, precision, recall, f1 = calculate_fitness(model, test_df)
+            chromosome.fitness = fitness_score
+            chromosome.accuracy = accuracy
+            chromosome.precision = precision
+            chromosome.recall = recall
+            chromosome.f1 = f1
+
+            if chromosome.fitness > best_fitness:
+                best_fitness = chromosome.fitness
+                save_model(model, run_id)
+
+            h2o.remove(model)
+        write_log(f'{chromosome.model_type}: {chromosome.fitness}', run_id)
+    return best_fitness
 
 
 def select(pop):
@@ -156,7 +177,9 @@ def crossover(chromosome_a, chromosome_b, conf):
 def reproduce(new_pop, selected, mutation, _crossover, conf):
     while mutation != 0:
         mutation -= 1
-        new_pop.append(mutate(random.choice(selected), conf))
+        mutated = mutate(random.choice(selected), conf)
+        mutated.fitness = None
+        new_pop.append(mutated)
 
     while _crossover > 0:
         _crossover -= 2
@@ -166,6 +189,8 @@ def reproduce(new_pop, selected, mutation, _crossover, conf):
             parents = random.sample(selected, 2)
 
         child_a, child_b = crossover(parents[0], parents[1], conf)
+        child_a.fitness = None
+        child_b.fitness = None
 
         if _crossover >= 0:
             new_pop.append(child_a)
@@ -176,23 +201,26 @@ def reproduce(new_pop, selected, mutation, _crossover, conf):
             new_pop.append(child_b)
 
 
-def genetic_algorithm(train_df, test_df, conf):
+def genetic_algorithm(train_df, test_df, conf, run_id):
     pop = init_pop(conf)
     historic = []
+    best_fitness = 0
     df = pandas.DataFrame(columns=['generation', 'best_fitness'])
     to_keep, mutation, _crossover = convert_percentages_to_values(len(pop), conf['reproduction_specs']['keep_rate'],
                                                                   conf['reproduction_specs']['mutation_rate'],
                                                                   conf['reproduction_specs']['crossover_rate'])
 
     for i in range(0, conf['num_of_gens']):
+        write_log(f'### Generation {str(i + 1)}', run_id)
         historic = historic + pop
-        fitness(pop, train_df, test_df)
+        best_fitness = fitness(pop, train_df, test_df, best_fitness, run_id)
         pop.sort(key=lambda chromosome: chromosome.fitness, reverse=True)
 
-        print('Generation: ' + str(i + 1))
-        print('Best Fitness: ' + str(pop[0].fitness))
+        write_log(f'### Best Fitness for Generation {str(i + 1)}: {str(pop[0].fitness)}', run_id)
 
-        row = pandas.DataFrame({'generation': [i], 'best_fitness': [pop[0].fitness]})
+        row = pandas.DataFrame(
+            {'generation': [i], 'best_fitness': [pop[0].fitness], 'best_accuracy': [pop[0].accuracy],
+             'best_precision': [pop[0].precision], 'best_recall': [pop[0].recall], 'best_f1': [pop[0].f1]})
         df = pandas.concat([df, row])
 
         new_pop = pop[:to_keep]

@@ -1,15 +1,15 @@
 {
   "num_of_gens": 20,
   "pop_specs": {
-    "pop_size": 25,
+    "pop_size": 10,
     "RF_pop_rate": 50,
     "DL_pop_rate": 50
   },
   "reproduction_specs": {
-    "keep_rate": 30,
-    "mutation_rate": 35,
+    "keep_rate": 10,
+    "mutation_rate": 50,
     "randomize_num_of_genes_to_mutate": false,
-    "crossover_rate": 35,
+    "crossover_rate": 40,
     "crossover_points": [
       20,
       80
@@ -17,8 +17,8 @@
   },
   "RF": {
     "ntrees": {
-      "min_value": 300,
-      "max_value": 500,
+      "min_value": 10,
+      "max_value": 50,
       "type": "integer"
     },
     "max_depth": {
@@ -41,11 +41,9 @@
       "max_value": 0.8,
       "type": "float"
     },
-    "max_runtime_secs": {
-      "min_value": 20,
-      "max_value": 100,
-      "type": "integer"
-    }
+    "max_runtime_secs": [
+      180
+    ]
   },
   "DL": {
     "activation": [
@@ -80,10 +78,8 @@
       "max_value": 50,
       "type": "integer"
     },
-    "max_runtime_secs": {
-      "min_value": 20,
-      "max_value": 100,
-      "type": "integer"
-    }
+    "max_runtime_secs": [
+      180
+    ]
   }
 }
