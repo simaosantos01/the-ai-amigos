@@ -80,7 +80,6 @@ def train_model(chromosome, train_df, test_df):
 def calculate_fitness(model, test_df):
     true_values = test_df.as_data_frame()['label'].tolist()
     predictions = model.predict(test_df).as_data_frame()['predict'].tolist()
-    predictions = [round(value) for value in predictions]
 
     # Calculate class weights based on class imbalance
     class_weights = compute_class_weights(true_values)
@@ -94,25 +93,39 @@ def calculate_fitness(model, test_df):
 
     # Calculate fitness score
     fitness_score = (accuracy + precision + recall + f1) / 4.0
+    print("accuracy: " + str(accuracy))
+    print("precision: " + str(precision))
+    print("recall: " + str(recall))
+    print("f1: " + str(f1))
     return fitness_score, accuracy, precision, recall, f1
 
 
 def fitness(pop, train_df, test_df, best_fitness, run_id):
     for chromosome in pop:
         if chromosome.fitness is None:
-            model = train_model(chromosome, train_df, test_df)
-            fitness_score, accuracy, precision, recall, f1 = calculate_fitness(model, test_df)
-            chromosome.fitness = fitness_score
-            chromosome.accuracy = accuracy
-            chromosome.precision = precision
-            chromosome.recall = recall
-            chromosome.f1 = f1
+            # noinspection PyBroadException
+            try:
+                model = train_model(chromosome, train_df, test_df)
+                fitness_score, accuracy, precision, recall, f1 = calculate_fitness(model, test_df)
+                chromosome.fitness = fitness_score
+                chromosome.accuracy = accuracy
+                chromosome.precision = precision
+                chromosome.recall = recall
+                chromosome.f1 = f1
 
-            if chromosome.fitness > best_fitness:
-                best_fitness = chromosome.fitness
-                save_model(model, run_id)
+                if chromosome.fitness > best_fitness:
+                    best_fitness = chromosome.fitness
+                    save_model(model, run_id)
 
-            h2o.remove(model)
+                h2o.remove(model)
+            except Exception as e:
+                print(e)
+                chromosome.fitness = 0
+                chromosome.accuracy = 0
+                chromosome.precision = 0
+                chromosome.recall = 0
+                chromosome.f1 = 0
+
         write_log(f'{chromosome.model_type}: {chromosome.fitness}', run_id)
     return best_fitness
 
@@ -152,9 +165,10 @@ def crossover(chromosome_a, chromosome_b):
 
     if num_of_crossover_points == 2:
         point_a = random.randint(2, num_of_genes - 1)
+        # noinspection PyBroadException
         try:
             point_b = generate_second_crossover_point(num_of_genes, point_a)
-        except Exception as e:
+        except Exception:
             point_b = num_of_genes
 
         child_a = copy.deepcopy(chromosome_a)

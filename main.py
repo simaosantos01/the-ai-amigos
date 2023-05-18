@@ -99,6 +99,10 @@ def main():
     # train data test split
     train_split_df, test_split_df = train_df.split_frame(ratios=[.75], seed=random.randint(0, 1000))
 
+    # encode 'label' column as categorical for multinomial classification
+    train_split_df['label'] = train_split_df['label'].asfactor()
+    test_split_df['label'] = test_split_df['label'].asfactor()
+
     # call genetic algorithm
     df_analysis, historic = genetic_algorithm(train_split_df, test_split_df, conf, run_id)
 
