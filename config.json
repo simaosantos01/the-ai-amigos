@@ -3,8 +3,8 @@
   "pop_specs": {
     "pop_size": 10,
     "RF_pop_rate": 0,
-    "DL_pop_rate": 0,
-    "GBM_pop_rate": 100
+    "DL_pop_rate": 100,
+    "GBM_pop_rate": 0
   },
   "reproduction_specs": {
     "keep_rate": 5,
@@ -57,13 +57,13 @@
       5
     ],
     "activation": [
-      "rectifier"
+      "rectifier_with_dropout"
     ],
     "hidden": [
       [
-        200,
-        200,
-        200
+        300,
+        300,
+        300
       ]
     ],
     "input_dropout_ratio": [
@@ -75,11 +75,11 @@
     "l1": [
       1e-5
     ],
-    "epochs": [
-      50
+    "l2": [
+      1e-5
     ],
-    "max_runtime_secs": [
-      300
+    "epochs": [
+      250
     ]
   },
   "GBM": {
@@ -93,13 +93,13 @@
       5
     ],
     "ntrees": [
-      150
+      200
     ],
     "learn_rate": [
       0.1
     ],
     "max_depth": [
-      10
+      20
     ],
     "min_rows": [
       10
