@@ -28,11 +28,6 @@
       "max_value": 100,
       "type": "integer"
     },
-    "learn_rate": {
-      "min_value": 0.1,
-      "max_value": 0.3,
-      "type": "float"
-    },
     "max_depth": {
       "min_value": 10,
       "max_value": 20,
