@@ -2,9 +2,9 @@
   "num_of_gens": 20,
   "pop_specs": {
     "pop_size": 10,
-    "RF_pop_rate": 0,
-    "DL_pop_rate": 100,
-    "GBM_pop_rate": 0
+    "RF_pop_rate": 33,
+    "DL_pop_rate": 33,
+    "GBM_pop_rate": 34
   },
   "reproduction_specs": {
     "keep_rate": 5,
@@ -13,37 +13,43 @@
     "crossover_rate": 45
   },
   "RF": {
-    "ntrees": {
-      "min_value": 10,
-      "max_value": 50,
-      "type": "integer"
-    },
-    "max_depth": {
-      "min_value": 25,
-      "max_value": 35,
-      "type": "integer"
-    },
-    "min_rows": {
-      "min_value": 5,
-      "max_value": 15,
-      "type": "integer"
-    },
-    "sample_rate": {
-      "min_value": 0.6,
-      "max_value": 0.8,
-      "type": "float"
-    },
-    "col_sample_rate_per_tree": {
-      "min_value": 0.5,
-      "max_value": 0.8,
-      "type": "float"
-    },
+    "ignore_const_cols": [
+      true
+    ],
+    "distribution": [
+      "multinomial"
+    ],
     "nfolds": [
       0,
       5
     ],
-    "max_runtime_secs": [
-      300
+    "ntrees": {
+      "min_value": 50,
+      "max_value": 100,
+      "type": "integer"
+    },
+    "learn_rate": {
+      "min_value": 0.1,
+      "max_value": 0.3,
+      "type": "float"
+    },
+    "max_depth": {
+      "min_value": 10,
+      "max_value": 20,
+      "type": "integer"
+    },
+    "min_rows": {
+      "min_value": 5,
+      "max_value": 10,
+      "type": "integer"
+    },
+    "sample_rate": [
+      0.7,
+      0.8
+    ],
+    "col_sample_rate": [
+      0.7,
+      0.8
     ]
   },
   "DL": {
@@ -54,12 +60,24 @@
       "multinomial"
     ],
     "nfolds": [
+      0,
       5
     ],
     "activation": [
-      "rectifier_with_dropout"
+      "rectifier_with_dropout",
+      "rectifier"
     ],
     "hidden": [
+      [
+        100,
+        100,
+        100
+      ],
+      [
+        200,
+        200,
+        200
+      ],
       [
         300,
         300,
@@ -79,7 +97,9 @@
       1e-5
     ],
     "epochs": [
-      250
+      100,
+      200,
+      300
     ]
   },
   "GBM": {
@@ -90,25 +110,36 @@
       "multinomial"
     ],
     "nfolds": [
+      0,
       5
     ],
-    "ntrees": [
-      200
-    ],
-    "learn_rate": [
-      0.1
-    ],
-    "max_depth": [
-      20
-    ],
-    "min_rows": [
-      10
-    ],
+    "ntrees": {
+      "min_value": 50,
+      "max_value": 100,
+      "type": "integer"
+    },
+    "learn_rate": {
+      "min_value": 0.1,
+      "max_value": 0.3,
+      "type": "float"
+    },
+    "max_depth": {
+      "min_value": 10,
+      "max_value": 20,
+      "type": "integer"
+    },
+    "min_rows": {
+      "min_value": 5,
+      "max_value": 10,
+      "type": "integer"
+    },
     "sample_rate": [
-      0.7
+      0.7,
+      0.8
     ],
     "col_sample_rate": [
-      0.7
+      0.7,
+      0.8
     ]
   }
 }
