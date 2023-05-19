@@ -1,5 +1,5 @@
 {
-  "num_of_gens": 20,
+  "num_of_gens": 10,
   "pop_specs": {
     "pop_size": 10,
     "RF_pop_rate": 33,
@@ -55,6 +55,7 @@
       5
     ],
     "activation": [
+      "tanh",
       "rectifier_with_dropout",
       "rectifier"
     ],
@@ -88,6 +89,7 @@
       1e-5
     ],
     "epochs": [
+      50,
       100,
       200,
       300

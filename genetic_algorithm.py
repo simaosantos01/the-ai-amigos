@@ -93,10 +93,6 @@ def calculate_fitness(model, test_df):
 
     # Calculate fitness score
     fitness_score = (accuracy + precision + recall + f1) / 4.0
-    print("accuracy: " + str(accuracy))
-    print("precision: " + str(precision))
-    print("recall: " + str(recall))
-    print("f1: " + str(f1))
     return fitness_score, accuracy, precision, recall, f1
 
 
@@ -118,15 +114,18 @@ def fitness(pop, train_df, test_df, best_fitness, run_id):
                     save_model(model, run_id)
 
                 h2o.remove(model)
-            except Exception as e:
-                print(e)
+            except Exception:
                 chromosome.fitness = 0
                 chromosome.accuracy = 0
                 chromosome.precision = 0
                 chromosome.recall = 0
                 chromosome.f1 = 0
 
-        write_log(f'{chromosome.model_type}: {chromosome.fitness}', run_id)
+        write_log(f'----- {chromosome.model_type}: {chromosome.fitness} -----', run_id)
+        write_log(f'accuracy: {chromosome.accuracy}', run_id)
+        write_log(f'precision: {chromosome.accuracy}', run_id)
+        write_log(f'recall: {chromosome.accuracy}', run_id)
+        write_log(f'f1: {chromosome.accuracy}', run_id)
     return best_fitness
 
 
