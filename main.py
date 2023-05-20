@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 from genetic_algorithm import genetic_algorithm, calculate_fitness
 from send_email import send_email
 
-h2o.init(max_mem_size='64g', nthreads=-1)
+h2o.init(max_mem_size='16g')
 
 
 def import_datasets():
