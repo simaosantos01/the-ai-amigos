@@ -35,22 +35,23 @@ class Chromosome:
 
 def init_pop(conf):
     pop = []
-    algo1, algo2, algo3 = convert_percentages_to_values(conf['pop_specs']['pop_size'], conf['pop_specs']['RF_pop_rate'],
-                                                        conf['pop_specs']['DL_pop_rate'],
+    algo1, algo2, algo3 = convert_percentages_to_values(conf['pop_specs']['pop_size'], conf['pop_specs']['DL_pop_rate'],
+                                                        conf['pop_specs']['RF_pop_rate'],
                                                         conf['pop_specs']['GBM_pop_rate'])
-    # RF
-    for i in range(algo1):
-        params = {'seed': random.randint(0, 1000000)}
-        for param in conf['RF'].keys():
-            params[param] = generate_random_value_for_param(conf['RF'][param])
-        pop.append(Chromosome('RF', params))
-
     # DL
-    for i in range(algo2):
+    for i in range(algo1):
         params = {'seed': random.randint(0, 1000000)}
         for param in conf['DL'].keys():
             params[param] = generate_random_value_for_param(conf['DL'][param])
         pop.append(Chromosome('DL', params))
+        print(Chromosome('DL', params))
+
+    # RF
+    for i in range(algo2):
+        params = {'seed': random.randint(0, 1000000)}
+        for param in conf['RF'].keys():
+            params[param] = generate_random_value_for_param(conf['RF'][param])
+        pop.append(Chromosome('RF', params))
 
     # GBM
     for i in range(algo3):
