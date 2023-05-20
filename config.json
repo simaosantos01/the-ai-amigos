@@ -30,7 +30,7 @@
     },
     "max_depth": {
       "min_value": 10,
-      "max_value": 20,
+      "max_value": 40,
       "type": "integer"
     },
     "min_rows": {
@@ -61,12 +61,9 @@
     ],
     "hidden": [
       [
-        100,
-        100,
         100
       ],
       [
-        200,
         200,
         200
       ],
@@ -77,6 +74,7 @@
       ]
     ],
     "input_dropout_ratio": [
+      0.1,
       0.2
     ],
     "sparse": [
@@ -118,7 +116,7 @@
     },
     "max_depth": {
       "min_value": 10,
-      "max_value": 20,
+      "max_value": 40,
       "type": "integer"
     },
     "min_rows": {
