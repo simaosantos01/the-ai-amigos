@@ -2,6 +2,8 @@ import json
 import os
 import random
 import shutil
+import time
+
 import pandas as pd
 from h2o import h2o
 from matplotlib import pyplot as plt
@@ -32,7 +34,7 @@ def generate_kaggle_sample(chromosome, test_split_df, test_df, run_id):
     df.to_csv(os.path.join(f'runs_history/{run_id}', 'kaggle_sample.csv'), index=False)
 
 
-def generate_analysis(df, historic, chromosome, run_id):
+def generate_analysis(df, historic, chromosome, run_id, elapsed_time, conf):
     # fitness and metrics plot
     fig1, ax1 = plt.subplots()
     ax1.set_xlabel("generation", fontsize=14)
@@ -58,17 +60,25 @@ def generate_analysis(df, historic, chromosome, run_id):
     # Save the Markdown text to a file
     markdown_filename = os.path.join(f'runs_history/{run_id}', 'analysis.md')
     with open(markdown_filename, 'w') as file:
-        file.write("# Genetic Algorithm Analysis \n\n")
-        file.write(f"### Best Fitness p/Generation \n\n{df.to_markdown()}\n\n")
-        file.write(f"### Fitness evolution\n\n![Plot](fitness_evolution.png)\n\n")
-        file.write(f"### Distribution of fitness\n\n![Plot](fitness_distribution.png)\n\n")
+        file.write("# Genetic Algorithm Analysis\n\n")
+        # overall metrics
+        file.write(f"**Elapsed time:** {elapsed_time} seconds  \n")
+        file.write(f"**Convergence speed:** {3} seconds  \n")
+        file.write(f"**Elitism:** {False if conf['reproduction_specs']['keep_ratio'] == 0 else False}  \n")
+        file.write(f"**Used dataset ratio:** {conf['model_training']['dataset_ratio']}  \n")
+        file.write(f"**Train data ratio:** {conf['model_training']['train_data_ratio']}  \n")
+        file.write(f"**Test data ratio:** {1 - conf['model_training']['train_data_ratio']}  \n")
+        # charts
+        file.write(f"### Metrics maximum value per generation \n\n{df.to_markdown()}\n\n")
+        file.write(f"### Metrics maximum value per generation (line chart) \n\n![Plot](fitness_evolution.png)\n\n")
+        file.write(f"### Fitness distribution \n\n![Plot](fitness_distribution.png)\n\n")
         file.write(f"### Model \n\n{df_chromosome.to_markdown()}\n\n")
 
-    # Save the plots as image files
-    plot1 = os.path.join(f'runs_history/{run_id}', 'fitness_evolution.png')
-    fig1.savefig(plot1)
-    plot2 = os.path.join(f'runs_history/{run_id}', 'fitness_distribution.png')
-    fig2.savefig(plot2)
+        # Save the plots as image files
+        plot1 = os.path.join(f'runs_history/{run_id}', 'fitness_evolution.png')
+        fig1.savefig(plot1)
+        plot2 = os.path.join(f'runs_history/{run_id}', 'fitness_distribution.png')
+        fig2.savefig(plot2)
 
 
 def main():
@@ -94,23 +104,28 @@ def main():
     train_df = train_df.drop('Id')
 
     # select only 50% of the train data
-    train_df, not_used_df = train_df.split_frame(ratios=[.50], seed=random.randint(0, 1000))
+    train_df, not_used_df = train_df.split_frame(ratios=[conf["model_training"]["dataset_ratio"]], seed=random.randint(
+        0, 1000))
 
     # train data test split
-    train_split_df, test_split_df = train_df.split_frame(ratios=[.75], seed=random.randint(0, 1000))
+    train_split_df, test_split_df = train_df.split_frame(ratios=[conf["model_training"]["train_data_ratio"]],
+                                                         seed=random.randint(0, 1000))
 
     # encode 'label' column as categorical for multinomial classification
     train_split_df['label'] = train_split_df['label'].asfactor()
     test_split_df['label'] = test_split_df['label'].asfactor()
 
     # call genetic algorithm
+    start_time = time.time()
     df_analysis, historic = genetic_algorithm(train_split_df, test_split_df, conf, run_id)
+    end_time = time.time()
+    elapsed_time = end_time - start_time
 
     # generate kaggle sample
     generate_kaggle_sample(historic[0], test_split_df, test_df, run_id)
 
     # generate analysis
-    generate_analysis(df_analysis, historic, historic[0], run_id)
+    generate_analysis(df_analysis, historic, historic[0], run_id, elapsed_time, conf)
 
     # send email with best fitness
     send_email(historic[0].fitness)

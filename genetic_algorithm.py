@@ -35,9 +35,10 @@ class Chromosome:
 
 def init_pop(conf):
     pop = []
-    algo1, algo2, algo3 = convert_percentages_to_values(conf['pop_specs']['pop_size'], conf['pop_specs']['DL_pop_rate'],
-                                                        conf['pop_specs']['RF_pop_rate'],
-                                                        conf['pop_specs']['GBM_pop_rate'])
+    algo1, algo2, algo3 = convert_percentages_to_values(conf['pop_specs']['pop_size'],
+                                                        conf['pop_specs']['DL_pop_ratio'],
+                                                        conf['pop_specs']['RF_pop_ratio'],
+                                                        conf['pop_specs']['GBM_pop_ratio'])
     # DL
     for i in range(algo1):
         params = {'seed': random.randint(0, 1000000)}
@@ -236,9 +237,9 @@ def genetic_algorithm(train_df, test_df, conf, run_id):
     historic = []
     best_fitness = 0
     df = pandas.DataFrame(columns=['generation', 'best_fitness'])
-    to_keep, mutation, _crossover = convert_percentages_to_values(len(pop), conf['reproduction_specs']['keep_rate'],
-                                                                  conf['reproduction_specs']['mutation_rate'],
-                                                                  conf['reproduction_specs']['crossover_rate'])
+    to_keep, mutation, _crossover = convert_percentages_to_values(len(pop), conf['reproduction_specs']['keep_ratio'],
+                                                                  conf['reproduction_specs']['mutation_ratio'],
+                                                                  conf['reproduction_specs']['crossover_ratio'])
 
     for i in range(0, conf['num_of_gens']):
         write_log(f'### Generation {str(i + 1)}', run_id)
