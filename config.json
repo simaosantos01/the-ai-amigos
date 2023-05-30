@@ -1,16 +1,16 @@
 {
   "num_of_gens": 2,
   "pop_specs": {
-    "pop_size": 10,
+    "pop_size": 2,
     "RF_pop_ratio": 33,
-    "DL_pop_ratio": 33,
-    "GBM_pop_ratio": 34
+    "DL_pop_ratio": 0,
+    "GBM_pop_ratio": 0
   },
   "reproduction_specs": {
-    "keep_ratio": 5,
-    "mutation_ratio": 60,
+    "keep_ratio": 0,
+    "mutation_ratio": 100,
     "randomize_num_of_genes_to_mutate": false,
-    "crossover_ratio": 45
+    "crossover_ratio": 0
   },
   "model_training": {
     "dataset_ratio": 0.1,
@@ -22,10 +22,6 @@
     ],
     "distribution": [
       "multinomial"
-    ],
-    "nfolds": [
-      0,
-      5
     ],
     "ntrees": {
       "min_value": 50,
@@ -56,10 +52,6 @@
     ],
     "distribution": [
       "multinomial"
-    ],
-    "nfolds": [
-      0,
-      5
     ],
     "activation": [
       "tanh",
@@ -122,10 +114,6 @@
     ],
     "distribution": [
       "multinomial"
-    ],
-    "nfolds": [
-      0,
-      5
     ],
     "ntrees": {
       "min_value": 50,

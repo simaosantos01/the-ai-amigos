@@ -1,5 +1,7 @@
 import copy
 import random
+import time
+
 import pandas
 from h2o import h2o
 from utils import convert_percentages_to_values, compute_class_weights, generate_random_value_for_param, save_model, \
@@ -45,7 +47,6 @@ def init_pop(conf):
         for param in conf['DL'].keys():
             params[param] = generate_random_value_for_param(conf['DL'][param])
         pop.append(Chromosome('DL', params))
-        print(Chromosome('DL', params))
 
     # RF
     for i in range(algo2):
@@ -235,6 +236,7 @@ def reproduce(new_pop, selected, mutation, _crossover, conf):
 def genetic_algorithm(train_df, test_df, conf, run_id):
     pop = init_pop(conf)
     historic = []
+    execution_time_per_generation = []
     best_fitness = 0
     df = pandas.DataFrame(columns=['generation', 'best_fitness'])
     to_keep, mutation, _crossover = convert_percentages_to_values(len(pop), conf['reproduction_specs']['keep_ratio'],
@@ -242,6 +244,7 @@ def genetic_algorithm(train_df, test_df, conf, run_id):
                                                                   conf['reproduction_specs']['crossover_ratio'])
 
     for i in range(0, conf['num_of_gens']):
+        start_time = time.time()
         write_log(f'### Generation {str(i + 1)}', run_id)
         historic = historic + pop
         best_fitness = fitness(pop, train_df, test_df, best_fitness, run_id)
@@ -258,6 +261,9 @@ def genetic_algorithm(train_df, test_df, conf, run_id):
         selected = select(pop)
         reproduce(new_pop, selected, mutation, _crossover, conf)
         pop = new_pop
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        execution_time_per_generation.append(elapsed_time)
 
     historic.sort(key=lambda chromosome: chromosome.fitness, reverse=True)
-    return df, historic
+    return df, historic, execution_time_per_generation
