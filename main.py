@@ -127,7 +127,6 @@ def generate_analysis(df, historic, chromosome, run_id, elapsed_time, execution_
         file.write("# Genetic Algorithm Analysis\n\n")
         # overall metrics
         file.write(f"**Elapsed time:** {round(elapsed_time, 2)} seconds  \n")
-        file.write(f"**Convergence speed:** {3} seconds  \n")
         file.write(f"**Elitism:** {False if conf['reproduction_specs']['keep_ratio'] == 0 else True}  \n")
         file.write(f"**Used dataset ratio:** {conf['model_training']['dataset_ratio']}  \n")
         file.write(f"**Train data ratio:** {conf['model_training']['train_data_ratio']}  \n")
@@ -143,8 +142,7 @@ def generate_analysis(df, historic, chromosome, run_id, elapsed_time, execution_
         file.write(f"### Execution time per generation \n\n![Plot](execution_time_per_generation.png)\n\n")
         # model
         file.write(f"# Best Solution Analysis\n\n{df_chromosome.to_markdown(index=False)}\n\n")
-        file.write(f"### Logloss \n\n![Plot](logloss.png)\n\n")
-        file.write(f"### Variable importance \n\n![Plot](varimp_plot.png)\n\n")
+        file.write(f"### Learning curve \n\n![Plot](logloss.png)\n\n")
 
         # Save the plots as image files
         plot1 = os.path.join(f'runs_history/{run_id}', 'metrics_max_value_per_generations.png')
