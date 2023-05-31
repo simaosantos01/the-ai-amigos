@@ -66,8 +66,7 @@ def metrics(historic, num_of_chromosomes_per_generation):
     return avg_fitness, rf_per_generation, dl_per_generation, gbm_per_generation
 
 
-def generate_analysis(df, historic, chromosome, run_id, elapsed_time, execution_time_per_generation, model,
-                      train_split_df, conf):
+def generate_analysis(df, historic, chromosome, run_id, elapsed_time, execution_time_per_generation, model, conf):
     # Metrics maximum value per generation
     fig1, ax1 = plt.subplots()
     ax1.set_xlabel("Generation", fontsize=14)
@@ -118,8 +117,9 @@ def generate_analysis(df, historic, chromosome, run_id, elapsed_time, execution_
     df_chromosome = df_chromosome.reindex(columns=columns)
 
     # Logloss
-    learning_curve = model.scoring_history()
-    df1 = pd.DataFrame(learning_curve)
+    learning_curve_plot = model.learning_curve_plot()
+    fig6 = learning_curve_plot.figure()
+    fig6.savefig(os.path.join(f'runs_history/{run_id}', 'logloss.png'))
 
     # Save the Markdown text to a file
     markdown_filename = os.path.join(f'runs_history/{run_id}', 'analysis.md')
@@ -143,6 +143,8 @@ def generate_analysis(df, historic, chromosome, run_id, elapsed_time, execution_
         file.write(f"### Execution time per generation \n\n![Plot](execution_time_per_generation.png)\n\n")
         # model
         file.write(f"# Best Solution Analysis\n\n{df_chromosome.to_markdown(index=False)}\n\n")
+        file.write(f"### Logloss \n\n![Plot](logloss.png)\n\n")
+        file.write(f"### Variable importance \n\n![Plot](varimp_plot.png)\n\n")
 
         # Save the plots as image files
         plot1 = os.path.join(f'runs_history/{run_id}', 'metrics_max_value_per_generations.png')
@@ -206,7 +208,7 @@ def main():
 
     # generate analysis
     generate_analysis(df_analysis, historic, historic[0], run_id, elapsed_time, execution_time_per_generation, model,
-                      train_split_df, conf)
+                      conf)
 
     # send email with best fitness
     send_email(historic[0].fitness)
