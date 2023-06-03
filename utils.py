@@ -85,4 +85,3 @@ def generate_second_crossover_point(num_of_genes, first_point):
             second_point = random.randint(half_size + 1, num_of_genes - 2)
 
     return second_point
-

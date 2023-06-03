@@ -28,45 +28,8 @@ def generate_kaggle_sample(test_df, run_id, model):
     df.to_csv(os.path.join(f'runs_history/{run_id}', 'kaggle_sample.csv'), index=False)
 
 
-def metrics(historic, num_of_chromosomes_per_generation):
-    avg_fitness = []
-    rf_per_generation = []
-    dl_per_generation = []
-    gbm_per_generation = []
-
-    fitness_sum = 0
-    rf_counter = 0
-    dl_counter = 0
-    gbm_counter = 0
-    chromosome_counter = 0
-    generation = 0
-    for index in range(len(historic)):
-        chromosome_counter += 1
-        fitness_sum += historic[index].fitness
-
-        if historic[index].model_type == 'RF':
-            rf_counter += 1
-        elif historic[index].model_type == 'DL':
-            dl_counter += 1
-        else:
-            gbm_counter += 1
-
-        if chromosome_counter == num_of_chromosomes_per_generation:
-            avg_fitness.append(fitness_sum / num_of_chromosomes_per_generation)
-            rf_per_generation.append(rf_counter)
-            dl_per_generation.append(dl_counter)
-            gbm_per_generation.append(gbm_counter)
-            fitness_sum = 0
-            rf_counter = 0
-            dl_counter = 0
-            gbm_counter = 0
-            chromosome_counter = 0
-            generation += 1
-
-    return avg_fitness, rf_per_generation, dl_per_generation, gbm_per_generation
-
-
-def generate_analysis(df, historic, chromosome, run_id, elapsed_time, execution_time_per_generation, model, conf):
+def generate_analysis(df, historic, chromosome, run_id, elapsed_time, execution_time_per_generation, model, avg_fitness,
+                      type_per_generation, conf):
     # Metrics maximum value per generation
     fig1, ax1 = plt.subplots()
     ax1.set_xlabel("Generation", fontsize=14)
@@ -84,9 +47,6 @@ def generate_analysis(df, historic, chromosome, run_id, elapsed_time, execution_
     ax2.set_xlabel("Fitness", fontsize=14)
     ax2.set_ylabel("Frequency", fontsize=14)
 
-    avg_fitness, rf_per_generation, dl_per_generation, gbm_per_generation = metrics(historic,
-                                                                                    conf['pop_specs']['pop_size'])
-
     # Average fitness per generation
     generations = range(len(avg_fitness))
     fig3, ax3 = plt.subplots()
@@ -97,9 +57,9 @@ def generate_analysis(df, historic, chromosome, run_id, elapsed_time, execution_
     # Number of models of each type per generation
     fig4, ax4 = plt.subplots()
     ax4.set_xlabel("Generation", fontsize=14)
-    line1 = ax4.plot(generations, rf_per_generation, color='blue', marker='o', label='random forest')
-    line2 = ax4.plot(generations, dl_per_generation, color='red', marker='o', label='deep learning')
-    line3 = ax4.plot(generations, gbm_per_generation, color='green', marker='o', label='gradient boost machine')
+    line1 = ax4.plot(generations, type_per_generation['RF'], color='blue', marker='o', label='random forest')
+    line2 = ax4.plot(generations, type_per_generation['DL'], color='red', marker='o', label='deep learning')
+    line3 = ax4.plot(generations, type_per_generation['GBM'], color='green', marker='o', label='gradient boost machine')
     fig4.tight_layout()
     ax4.legend(handles=line1 + line2 + line3, loc='upper left')
 
@@ -193,8 +153,9 @@ def main():
 
     # call genetic algorithm
     start_time = time.time()
-    df_analysis, historic, execution_time_per_generation = genetic_algorithm(train_split_df, test_split_df, conf,
-                                                                             run_id)
+    df_analysis, historic, execution_time_per_generation, avg_fitness, type_per_generation = genetic_algorithm(
+        train_split_df, test_split_df, conf, run_id)
+
     end_time = time.time()
     elapsed_time = end_time - start_time
 
@@ -206,10 +167,15 @@ def main():
 
     # generate analysis
     generate_analysis(df_analysis, historic, historic[0], run_id, elapsed_time, execution_time_per_generation, model,
-                      conf)
+                      avg_fitness, type_per_generation, conf)
 
     # send email with best fitness
-    send_email(historic[0].fitness)
+
+    # noinspection PyBroadException
+    try:
+        send_email(historic[0].fitness)
+    except Exception:
+        print('Could not send e-mail')
 
 
 if __name__ == "__main__":

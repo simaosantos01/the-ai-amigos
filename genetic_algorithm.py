@@ -76,7 +76,7 @@ def train_model(chromosome, train_df, test_df):
     else:
         model = H2OGradientBoostingEstimator(**chromosome.params)
 
-    model.train(x=predictors, y=response, training_frame=train_df, validation_frame=test_df)
+    model.train(x=predictors, y=response, training_frame=train_df)
     return model
 
 
@@ -233,10 +233,29 @@ def reproduce(new_pop, selected, mutation, _crossover, conf):
             new_pop.append(child_b)
 
 
+def count_by_model_type(type_per_generation, pop):
+    rf = 0
+    dl = 0
+    gbm = 0
+    for chromo in pop:
+        if chromo.model_type == 'RF':
+            rf += 1
+        elif chromo.model_type == 'DL':
+            dl += 1
+        else:
+            gbm += 1
+
+    type_per_generation['RF'].append(rf)
+    type_per_generation['DL'].append(dl)
+    type_per_generation['GBM'].append(gbm)
+
+
 def genetic_algorithm(train_df, test_df, conf, run_id):
     pop = init_pop(conf)
     historic = []
     execution_time_per_generation = []
+    avg_fitness = []
+    type_per_generation = {'RF': [], 'DL': [], 'GBM': []}
     best_fitness = 0
     df = pandas.DataFrame(columns=['generation', 'best_fitness'])
     to_keep, mutation, _crossover = convert_percentages_to_values(len(pop), conf['reproduction_specs']['keep_ratio'],
@@ -249,6 +268,12 @@ def genetic_algorithm(train_df, test_df, conf, run_id):
         historic = historic + pop
         best_fitness = fitness(pop, train_df, test_df, best_fitness, run_id)
         pop.sort(key=lambda chromosome: chromosome.fitness, reverse=True)
+
+        # fitness avg
+        fit_values = [chromo.fitness for chromo in pop]
+        avg_fitness.append(sum(fit_values) / len(fit_values))
+        # types per generation
+        count_by_model_type(type_per_generation, pop)
 
         write_log(f'### Best Fitness for Generation {str(i + 1)}: {str(pop[0].fitness)}', run_id)
 
@@ -266,4 +291,4 @@ def genetic_algorithm(train_df, test_df, conf, run_id):
         execution_time_per_generation.append(elapsed_time)
 
     historic.sort(key=lambda chromosome: chromosome.fitness, reverse=True)
-    return df, historic, execution_time_per_generation
+    return df, historic, execution_time_per_generation, avg_fitness, type_per_generation
